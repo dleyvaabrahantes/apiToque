@@ -5,16 +5,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 let cachedData = null;
+let cacheTimestamp = null;
 
 app.get('/data', async (req, res) => {
-  if (cachedData) {
-    // Si ya tenemos los datos en caché, los enviamos
-    res.json(cachedData);
-  } else {
+  const currentTime = Date.now();
+
+  // Si los datos están en caché y han pasado más de 1 hora, actualiza la caché
+  if (!cachedData || (currentTime - cacheTimestamp) >= 3600000) { // 3600000 milisegundos = 1 hora
     try {
       const currentDate = new Date().toISOString().split('T')[0];
-      // Configurar la solicitud a la API original con el encabezado de autorización
-
       const apiUrl = `https://tasas.eltoque.com/v1/trmi?date_from=${currentDate}%2000%3A00%3A01&date_to=${currentDate}%2023%3A59%3A01`;
 
       const response = await axios.get(apiUrl, {
@@ -26,13 +25,17 @@ app.get('/data', async (req, res) => {
 
       const data = response.data;
 
-      // Almacenar los datos en caché y enviar la respuesta
+      // Actualizar la caché y la marca de tiempo
       cachedData = data;
-      res.json(data);
+      cacheTimestamp = currentTime;
     } catch (error) {
       res.status(500).json({ error: 'No se pudo obtener la información' });
+      return;
     }
   }
+
+  // Enviar los datos desde la caché
+  res.json(cachedData);
 });
 
 app.listen(PORT, () => {
