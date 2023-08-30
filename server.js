@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const moment = require('moment-timezone');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,7 +14,10 @@ app.get('/data', async (req, res) => {
   // Si los datos están en caché y han pasado más de 1 hora, actualiza la caché
   if (!cachedData || (currentTime - cacheTimestamp) >= 3600000) { // 3600000 milisegundos = 1 hora
     try {
-      const currentDate = new Date().toISOString().split('T')[0];
+      const cubaDateTime = moment().tz('America/New_York');
+      
+
+      const currentDate = cubaDateTime.toISOString().split('T')[0];
       const apiUrl = `https://tasas.eltoque.com/v1/trmi?date_from=${currentDate}%2000%3A00%3A01&date_to=${currentDate}%2023%3A59%3A01`;
 
       const response = await axios.get(apiUrl, {
