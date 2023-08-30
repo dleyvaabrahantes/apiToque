@@ -1,6 +1,28 @@
 const express = require('express');
 const axios = require('axios');
-const moment = require('moment-timezone');
+
+
+const getLocalizedTime = (region) => {
+  const now = new Date();
+  
+  const utcOffset = getUtcOffset(region);
+  const localTime = new Date(now.getTime() + utcOffset);
+  
+  return localTime;
+};
+
+const getUtcOffset = (region) => {
+  // Map of region to UTC offsets in minutes
+  const utcOffsets = {
+    'America/New_York': -4 * 60, // Eastern Daylight Time (EDT) UTC-4
+    // Add more regions and their offsets as needed
+  };
+  
+  return utcOffsets[region] || 0; // Default to UTC if region is not found
+};
+
+const region = 'America/New_York';
+const currentTimeActual = getLocalizedTime(region);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,10 +36,10 @@ app.get('/data', async (req, res) => {
   // Si los datos están en caché y han pasado más de 1 hora, actualiza la caché
   if (!cachedData || (currentTime - cacheTimestamp) >= 3600000) { // 3600000 milisegundos = 1 hora
     try {
-      const cubaDateTime = moment().tz('America/New_York');
+      
       
 
-      const currentDate = cubaDateTime.toISOString().split('T')[0];
+      const currentDate = currentTimeActual.toISOString().split('T')[0];
       const apiUrl = `https://tasas.eltoque.com/v1/trmi?date_from=${currentDate}%2000%3A00%3A01&date_to=${currentDate}%2023%3A59%3A01`;
 
       const response = await axios.get(apiUrl, {
